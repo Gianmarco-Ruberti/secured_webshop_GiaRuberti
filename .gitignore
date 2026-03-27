@@ -8,3 +8,7 @@
 /app/public/uploads/*.png
 /app/public/uploads/*.gif
 /app/public/uploads/*.webp
+
+.env
+package-lock.json
+/app/config/security.js
