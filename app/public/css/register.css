@@ -104,3 +104,18 @@
             margin-bottom: 1rem;
             display: none;
         }
+
+        .password-requirements {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-top: 0.5rem;
+        }
+
+        .password-requirements ul {
+            margin: 0.5rem 0 0 1.5rem;
+            padding: 0;
+        }
+
+        .password-requirements li {
+            margin: 0.25rem 0;
+        }
