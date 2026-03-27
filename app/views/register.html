@@ -5,19 +5,83 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Secure Shop - Inscription</title>
     <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/register.css">
 </head>
 <body>
     <div id="topbar"></div>
 
-    <main>
-        <section class="hero">
-            <div class="container">
-                <h1>Inscription</h1>
+    <main class="auth-container">
+        <div class="auth-card">
+            <h2>Inscription</h2>
 
-                <p>Placer un formulaire d'inscription ici</p>
+            <div id="errorMessage" class="error-message"></div>
+            <div id="successMessage" class="success-message"></div>
 
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="username">Nom d'utilisateur</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username" 
+                        placeholder="Votre nom d'utilisateur"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        placeholder="votre@email.com"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Mot de passe</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        placeholder="Minimum 6 caractères"
+                        required
+                    >
+                    <div class="password-requirements">
+                        Minimum 6 caractères requis
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="passwordConfirm">Confirmer le mot de passe</label>
+                    <input 
+                        type="password" 
+                        id="passwordConfirm" 
+                        name="passwordConfirm" 
+                        placeholder="Confirmez votre mot de passe"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="address">Adresse (optionnelle)</label>
+                    <input 
+                        type="text" 
+                        id="address" 
+                        name="address" 
+                        placeholder="Votre adresse"
+                    >
+                </div>
+
+                <button type="submit" class="btn" id="submitBtn">S'inscrire</button>
+            </form>
+
+            <div class="form-footer">
+                Déjà inscrit ? <a href="/login">Se connecter</a>
             </div>
-        </section>
+        </div>
     </main>
 
     <footer id="contact" class="footer">
@@ -27,5 +91,88 @@
     </footer>
 
     <script src="/js/nav.js"></script>
+    <script>
+        const registerForm = document.getElementById('registerForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const submitBtn = document.getElementById('submitBtn');
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+        }
+
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const passwordConfirm = document.getElementById('passwordConfirm').value;
+            const address = document.getElementById('address').value;
+
+            // Validation côté client
+            if (password !== passwordConfirm) {
+                showError('Les mots de passe ne correspondent pas');
+                return;
+            }
+
+            if (password.length < 6) {
+                showError('Le mot de passe doit contenir au moins 6 caractères');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Inscription en cours...';
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username,
+                        email,
+                        password,
+                        passwordConfirm,
+                        address
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Erreur lors de l\'inscription');
+                }
+
+                // Stocker le token et les infos utilisateur
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+
+                showSuccess('Inscription réussie! Redirection...');
+                
+                // Redirection après 1.5 secondes
+                setTimeout(() => {
+                    window.location.href = '/profile';
+                }, 1500);
+            } catch (error) {
+                showError(error.message);
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'S\'inscrire';
+            }
+        });
+
+        // Nettoyer les messages au départ
+        errorMessage.style.display = 'none';
+        successMessage.style.display = 'none';
+    </script>
 </body>
 </html>

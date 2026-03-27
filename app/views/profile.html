@@ -3,59 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Shop - Mon Profil</title>
+    <title>Secure Shop - Inscription</title>
     <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/profile.css">
 </head>
 <body>
     <div id="topbar"></div>
 
-    <main>
-        <section class="hero">
-            <div class="container">
-                <h1>Mon Profil</h1>
-            </div>
-        </section>
+    <main class="auth-container">
+        <div class="auth-card">
+            <h2>Inscription</h2>
 
-        <div class="container">
-            <div class="profile-card">
+            <div id="errorMessage" class="error-message"></div>
+            <div id="successMessage" class="success-message"></div>
 
-                <!-- Photo de profil -->
-                <div id="photo-container">
-                    <div class="profile-photo-placeholder" id="photo-placeholder">👤</div>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="username">Nom d'utilisateur</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username" 
+                        placeholder="Votre nom d'utilisateur"
+                        required
+                    >
                 </div>
 
-                <!-- Informations de base -->
-                <div id="user-info">
-                    <div class="info-row"><strong>Nom :</strong> <span id="username">...</span></div>
-                    <div class="info-row"><strong>Email :</strong> <span id="email">...</span></div>
-                    <div class="info-row"><strong>Rôle :</strong> <span id="role">...</span></div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        placeholder="votre@email.com"
+                        required
+                    >
                 </div>
 
-                <hr>
-
-                <!-- Message de statut -->
-                <div class="message" id="status-message"></div>
-
-                <!-- Formulaire de mise à jour de l'adresse -->
-                <form id="address-form">
-                    <div class="form-group">
-                        <label for="address">Adresse</label>
-                        <input type="text" id="address" name="address" placeholder="Votre adresse complète">
+                <div class="form-group">
+                    <label for="password">Mot de passe</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        placeholder="Minimum 6 caractères"
+                        required
+                    >
+                    <div class="password-requirements">
+                        Minimum 6 caractères requis
                     </div>
-                    <button type="submit">Mettre à jour l'adresse</button>
-                </form>
+                </div>
 
-                <hr>
+                <div class="form-group">
+                    <label for="passwordConfirm">Confirmer le mot de passe</label>
+                    <input 
+                        type="password" 
+                        id="passwordConfirm" 
+                        name="passwordConfirm" 
+                        placeholder="Confirmez votre mot de passe"
+                        required
+                    >
+                </div>
 
-                <!-- Formulaire d'upload de photo -->
-                <form id="photo-form">
-                    <div class="form-group">
-                        <label for="photo">Photo de profil</label>
-                        <input type="file" id="photo" name="photo" accept="image/*">
-                    </div>
-                    <button type="submit">Envoyer la photo</button>
-                </form>
+                <div class="form-group">
+                    <label for="address">Adresse (optionnelle)</label>
+                    <input 
+                        type="text" 
+                        id="address" 
+                        name="address" 
+                        placeholder="Votre adresse"
+                    >
+                </div>
 
+                <button type="submit" class="btn" id="submitBtn">S'inscrire</button>
+            </form>
+
+            <div class="form-footer">
+                Déjà inscrit ? <a href="/login">Se connecter</a>
             </div>
         </div>
     </main>
@@ -68,73 +92,87 @@
 
     <script src="/js/nav.js"></script>
     <script>
-        // ------------------------------------------------------------------
-        // Chargement du profil au démarrage
-        // ------------------------------------------------------------------
-        async function loadProfile() {
-            const res = await fetch('/api/profile');
-            if (!res.ok) return;
-            const user = await res.json();
+        const registerForm = document.getElementById('registerForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const submitBtn = document.getElementById('submitBtn');
 
-            document.getElementById('username').textContent = user.username;
-            document.getElementById('email').textContent    = user.email;
-            document.getElementById('role').textContent     = user.role;
-
-            document.getElementById('address').value = user.address || '';
-
-            const photoContainer = document.getElementById('photo-container');
-            if (user.photo_path) {
-                photoContainer.innerHTML = `<img class="profile-photo" src="${user.photo_path}" alt="Photo de profil">`;
-            }
-
-            const infoDiv = document.getElementById('user-info');
-            infoDiv.innerHTML += `<div class="info-row"><strong>Adresse :</strong> ${user.address || ''}</div>`;
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
         }
 
-        // ------------------------------------------------------------------
-        // Mise à jour de l'adresse
-        // ------------------------------------------------------------------
-        document.getElementById('address-form').addEventListener('submit', async (e) => {
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+        }
+
+        registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const passwordConfirm = document.getElementById('passwordConfirm').value;
             const address = document.getElementById('address').value;
 
-            const res = await fetch('/api/profile', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ address })
-            });
+            // Validation côté client
+            if (password !== passwordConfirm) {
+                showError('Les mots de passe ne correspondent pas');
+                return;
+            }
 
-            const data = await res.json();
-            showMessage(res.ok ? 'success' : 'error', data.message || data.error);
-            if (res.ok) loadProfile();
+            if (password.length < 6) {
+                showError('Le mot de passe doit contenir au moins 6 caractères');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Inscription en cours...';
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username,
+                        email,
+                        password,
+                        passwordConfirm,
+                        address
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Erreur lors de l\'inscription');
+                }
+
+                // Stocker le token et les infos utilisateur
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+
+                showSuccess('Inscription réussie! Redirection...');
+                
+                // Redirection après 1.5 secondes
+                setTimeout(() => {
+                    window.location.href = '/profile';
+                }, 1500);
+            } catch (error) {
+                showError(error.message);
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'S\'inscrire';
+            }
         });
 
-        // ------------------------------------------------------------------
-        // Upload de la photo
-        // ------------------------------------------------------------------
-        document.getElementById('photo-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const file = document.getElementById('photo').files[0];
-            if (!file) return showMessage('error', 'Aucun fichier sélectionné');
-
-            const formData = new FormData();
-            formData.append('photo', file);
-
-            const res = await fetch('/api/profile/photo', { method: 'POST', body: formData });
-            const data = await res.json();
-            showMessage(res.ok ? 'success' : 'error', data.message || data.error);
-            if (res.ok) loadProfile();
-        });
-
-        function showMessage(type, text) {
-            const el = document.getElementById('status-message');
-            el.textContent = text;
-            el.className = 'message ' + type;
-            el.style.display = 'block';
-            setTimeout(() => { el.style.display = 'none'; }, 4000);
-        }
-
-        loadProfile();
+        // Nettoyer les messages au départ
+        errorMessage.style.display = 'none';
+        successMessage.style.display = 'none';
     </script>
 </body>
 </html>

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Secure Shop - Administration</title>
     <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/admin.css">
 </head>
 <body>
     <div id="topbar"></div>
@@ -19,6 +20,15 @@
 
         <section class="admin-section">
             <div class="container">
+                <div id="errorMessage" class="error-message"></div>
+                <div id="successMessage" class="success-message"></div>
+
+                <div class="user-info">
+                    <strong>Connecté en tant que:</strong> <span id="adminName">-</span> (<span id="adminEmail">-</span>)
+                </div>
+
+                <button class="logout-btn" id="logoutBtn">Se déconnecter</button>
+
                 <h2>Liste des utilisateurs</h2>
                 <table>
                     <thead>
@@ -46,24 +56,91 @@
 
     <script src="/js/nav.js"></script>
     <script>
-        fetch('/api/admin/users')
-            .then(r => r.json())
-            .then(users => {
-                const tbody = document.getElementById('user-table-body');
-                tbody.innerHTML = users.map(u => `
-                    <tr>
-                        <td>${u.id}</td>
-                        <td>${u.username}</td>
-                        <td>${u.email}</td>
-                        <td><span class="badge-${u.role}">${u.role}</span></td>
-                        <td>${u.address || '-'}</td>
-                    </tr>
-                `).join('');
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+        }
+
+        // Vérifier l'authentification
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
+
+            if (!token || !user) {
+                window.location.href = '/login';
+                return null;
+            }
+
+            const userData = JSON.parse(user);
+
+            // Vérifier que l'utilisateur est admin
+            if (userData.role !== 'admin') {
+                showError('Accès refusé: vous n\'êtes pas administrateur');
+                setTimeout(() => window.location.href = '/profile', 2000);
+                return null;
+            }
+
+            // Afficher les infos utilisateur
+            document.getElementById('adminName').textContent = userData.username;
+            document.getElementById('adminEmail').textContent = userData.email;
+
+            return token;
+        }
+
+        const token = checkAuth();
+
+        if (token) {
+            // Charger la liste des utilisateurs
+            fetch('/api/admin/users', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
             })
-            .catch(() => {
-                document.getElementById('user-table-body').innerHTML =
-                    '<tr><td colspan="5">Erreur lors du chargement</td></tr>';
-            });
+                .then(r => {
+                    if (!r.ok) {
+                        if (r.status === 401) {
+                            throw new Error('Token expiré. Veuillez vous reconnecter');
+                        } else if (r.status === 403) {
+                            throw new Error('Accès refusé: rôle admin requis');
+                        }
+                        throw new Error('Erreur lors du chargement');
+                    }
+                    return r.json();
+                })
+                .then(users => {
+                    const tbody = document.getElementById('user-table-body');
+                    if (users.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5">Aucun utilisateur</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = users.map(u => `
+                        <tr>
+                            <td>${u.id}</td>
+                            <td>${u.username}</td>
+                            <td>${u.email}</td>
+                            <td><span class="badge-${u.role}">${u.role}</span></td>
+                            <td>${u.address || '-'}</td>
+                        </tr>
+                    `).join('');
+                })
+                .catch((err) => {
+                    showError(err.message);
+                });
+        }
+
+        // Bouton de déconnexion
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        });
     </script>
 </body>
 </html>

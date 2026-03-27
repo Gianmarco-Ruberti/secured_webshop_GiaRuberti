@@ -57,77 +57,69 @@
 
     <script src="/js/nav.js"></script>
     <script>
-        // Sélection des éléments HTML pour les manipuler en JS
         const loginForm = document.getElementById('loginForm');
         const errorMessage = document.getElementById('errorMessage');
         const successMessage = document.getElementById('successMessage');
         const submitBtn = document.getElementById('submitBtn');
 
-        // Fonction pour afficher un message d'erreur
         function showError(message) {
             errorMessage.textContent = message;
-            errorMessage.style.display = 'block'; // Affiche la div
-            successMessage.style.display = 'none'; // Cache le succès
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
         }
 
-        // Fonction pour afficher un message de succès
         function showSuccess(message) {
             successMessage.textContent = message;
-            successMessage.style.display = 'block'; // Affiche la div
-            errorMessage.style.display = 'none'; // Cache l'erreur
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
         }
 
-        // Écouteur d'événement sur la soumission du formulaire
         loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault(); // Empêche le rechargement de la page
+            e.preventDefault();
 
-            // Récupération des valeurs saisies par l'utilisateur
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
-            // Feedback visuel : on désactive le bouton pendant l'attente
             submitBtn.disabled = true;
             submitBtn.textContent = 'Connexion en cours...';
 
             try {
-                // Envoi d'une requête POST à l'API du serveur
                 const response = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json' // On précise qu'on envoie du JSON
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ email, password }) // Conversion des données en texte JSON
+                    body: JSON.stringify({ email, password })
                 });
 
                 const data = await response.json();
 
-                // Si la réponse n'est pas "OK" (ex: erreur 401 ou 400)
                 if (!response.ok) {
                     throw new Error(data.error || 'Erreur de connexion');
                 }
 
-                // --- SI LA CONNEXION REUSSIT ---
-            
+                // Stocker le token et les infos utilisateur
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+
                 showSuccess('Connexion réussie! Redirection...');
                 
-                // Redirection après 1.5 secondes selon le rôle de l'utilisateur
+                // Redirection après 1.5 secondes
                 setTimeout(() => {
                     if (data.user.role === 'admin') {
-                        window.location.href = '/admin'; // Page admin
+                        window.location.href = '/admin';
                     } else {
-                        window.location.href = '/profile'; // Page profil classique
+                        window.location.href = '/profile';
                     }
                 }, 1500);
-
             } catch (error) {
-                // --- SI UNE ERREUR SURVIENT (Mauvais mot de passe, serveur HS, etc.) ---
                 showError(error.message);
-                submitBtn.disabled = false; // Réactive le bouton
-                submitBtn.textContent = 'Se connecter'; // Remet le texte d'origine
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Se connecter';
             }
         });
 
-        // Initialisation : on cache les messages au chargement de la page
+        // Nettoyer les messages au départ
         errorMessage.style.display = 'none';
         successMessage.style.display = 'none';
     </script>
