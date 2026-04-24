@@ -37,8 +37,46 @@ app.get("/register", (_req, res) => res.sendFile(path.join(__dirname, "views", "
 app.get("/profile",  (_req, res) => res.sendFile(path.join(__dirname, "views", "profile.html")));
 app.get("/admin",    (_req, res) => res.sendFile(path.join(__dirname, "views", "admin.html")));
 
+// ---------------------------------------------------------------
 // Démarrage du serveur
-app.get("/test",      (_req, res) => res.send("db admin: root, pwd : root"));
-app.listen(8080, () => {
-    console.log("Serveur démarré sur http://localhost:8080");
-});
+// ---------------------------------------------------------------
+
+const fs = require('fs');
+const https = require('https');
+const http = require('http');
+
+// Ports
+const HTTP_PORT = 8080;
+const HTTPS_PORT = 8443;
+
+// Chemins des certificats SSL (à créer manuellement dans ./certs/)
+const SSL_KEY = '../certs/ssl_key.pem';
+const SSL_CERT = '../certs/ssl_cert.pem';
+
+// Chercher les certificats
+const keyExists = fs.existsSync(path.resolve(__dirname, SSL_KEY));
+const certExists = fs.existsSync(path.resolve(__dirname, SSL_CERT));
+
+if (keyExists && certExists) {
+    // HTTPS activé : charger les certificats et démarrer en HTTPS
+    const key = fs.readFileSync(path.resolve(__dirname, SSL_KEY));
+    const cert = fs.readFileSync(path.resolve(__dirname, SSL_CERT));
+
+    https.createServer({ key, cert }, app).listen(HTTPS_PORT, () => {
+        console.log(`Serveur HTTPS sur https://localhost:${HTTPS_PORT}`);
+    });
+
+    // Redirection HTTP vers HTTPS
+    http.createServer((req, res) => {
+        res.writeHead(301, { Location: `https://localhost:${HTTPS_PORT}${req.url}` });
+        res.end();
+    }).listen(HTTP_PORT, () => {
+        console.log(`Redirection HTTP (${HTTP_PORT}) → HTTPS (${HTTPS_PORT})`);
+    });
+} else {
+    // HTTPS désactivé : démarrer en HTTP uniquement
+    app.listen(HTTP_PORT, () => {
+        console.log(`Serveur HTTP sur http://localhost:${HTTP_PORT}`);
+        console.log(`Pour activer HTTPS, ajoutez les certificats dans ./certs/`);
+    });
+}
