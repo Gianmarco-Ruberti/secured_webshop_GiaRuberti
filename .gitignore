@@ -12,3 +12,4 @@
 .env
 package-lock.json
 /app/config/security.js
+/certs
