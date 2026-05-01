@@ -1,6 +1,6 @@
 const db = require('../config/db');
 const securityUtils = require('../utils/security');
-
+const logger = require('../utils/logger');
 module.exports = {
 
     // ----------------------------------------------------------
@@ -20,11 +20,12 @@ module.exports = {
             
             db.query(query, [email], async (err, results) => {
                 if (err) {
-                    console.error('Erreur DB:', err);
+                    logger.error('LOGIN_ATTEMPT', 'Erreur lors de la tentative de connexion', { email });
                     return res.status(500).json({ error: 'Erreur serveur' });
                 }
 
                 if (results.length === 0) {
+                    logger.warn('AUTH_FAILURE', 'Email inexistant', { email, ip: req.ip });
                     return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
                 }
 
@@ -35,9 +36,10 @@ module.exports = {
                     const isPasswordValid = await securityUtils.comparePassword(password, user.password);
 
                     if (!isPasswordValid) {
+                        logger.warn('AUTH_FAILURE', 'Mot de passe incorrect', { email, ip: req.ip });
                         return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
                     }
-
+                    logger.info('AUTH_SUCCESS', `Utilisateur connecté : ${user.username}`, { userId: user.id, role: user.role });
                     // Générer le JWT
                     const token = securityUtils.generateToken(user);
 
@@ -52,12 +54,12 @@ module.exports = {
                         }
                     });
                 } catch (error) {
-                    console.error('Erreur de comparaison:', error);
+                    logger.error('CRITICAL_ERROR', 'Crash dans le controller login', { error: error.message });
                     return res.status(500).json({ error: 'Erreur serveur' });
                 }
             });
         } catch (error) {
-            console.error('Erreur login:', error);
+            logger.error('CRITICAL_ERROR', 'Crash dans le controller login', { error: error.message });
             res.status(500).json({ error: 'Erreur serveur' });
         }
     },
@@ -87,11 +89,12 @@ module.exports = {
             const checkQuery = 'SELECT id FROM users WHERE email = ?';
             db.query(checkQuery, [email], async (err, results) => {
                 if (err) {
-                    console.error('Erreur DB:', err);
+                    logger.error('CRITICAL_ERROR', 'Crash dans le controller register', { error: err.message });
                     return res.status(500).json({ error: 'Erreur serveur' });
                 }
 
                 if (results.length > 0) {
+                    logger.warn('USER_CREATION_FAILURE', 'Email déjà utilisé', { email, ip: req.ip });
                     return res.status(400).json({ error: 'Cet email est déjà utilisé' });
                 }
 

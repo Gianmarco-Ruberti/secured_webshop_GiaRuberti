@@ -13,3 +13,4 @@
 package-lock.json
 /app/config/security.js
 /certs
+/app/logs
