@@ -726,4 +726,72 @@ SSL_CERT_PATH=/etc/letsencrypt/live/example.com/fullchain.pem
 
 ---
 ### 10.	Vérifier la résistance de vos hash avec l’outil John The Ripper et aux rainbow tables, via un export de la BDD
+
+j'ai eu du mal a installer john the ripper pour faire le test
+faut aller sur https://www.openwall.com/john/
+
+### 11.	Limiter le nombre de tentatives de login (exemple : 5 essais par minute par IP) pour contrer le brute-force
+
+Pour sécuriser l'authentification et prévenir les attaques par force brute ou les abus de ressources, j'ai développé un middleware de Rate Limiting sur mesure. Ce dispositif garantit que seul un nombre restreint de tentatives de connexion est autorisé sur un intervalle de temps donné.
+Paramétrage de la politique de sécurité
+
+Le module est configuré de manière stricte pour maximiser la sécurité des comptes utilisateurs :
+
+    Limite : 3 tentatives maximum.
+
+    Fenêtre temporelle : 15 minutes (15 * 60 * 1000 ms).
+
+    Action : Blocage temporaire de l'adresse IP concernée.
+
+#### Implémentation technique
+
+Le code repose sur une logique de suivi en mémoire vive via l'objet Map de JavaScript :
+
+    const WINDOW = 15 * 60 * 1000; // 15 minutes
+    const ATTEMPTS = 3;
+    const ATTEMPTSBYIP = new Map();
+
+    // Fonction de purge pour optimiser la mémoire RAM
+    function cleanupExpired(now) {
+        for (const [ip, entry] of ATTEMPTSBYIP.entries()) {
+            if (entry.resetTime <= now) {
+                ATTEMPTSBYIP.delete(ip);
+            }
+        }
+    }
+
+    module.exports = (req, res, next) => {
+        const now = Date.now();
+        const ip = req.ip || req.connection?.remoteAddress || 'unknown';
+
+        cleanupExpired(now);
+
+        const existing = ATTEMPTSBYIP.get(ip);
+        
+        // Initialisation ou réinitialisation si le délai est passé
+        if (!existing || existing.resetTime <= now) {
+            ATTEMPTSBYIP.set(ip, { count: 1, resetTime: now + WINDOW });
+            return next();
+        }
+
+        // Vérification du seuil critique
+        if (existing.count >= ATTEMPTS) {
+            const retryAfterSeconds = Math.ceil((existing.resetTime - now) / 1000);
+            res.set('Retry-After', String(retryAfterSeconds));
+            return res.status(429).json({
+                error: `Trop de tentatives de connexion. Reessayez dans 15 minutes.`
+            });
+        }
+
+        // Incrémentation du compteur pour l'IP identifiée
+        existing.count += 1;
+        ATTEMPTSBYIP.set(ip, existing);
+        next();
+    };
+
+#### Analyse du fonctionnement
+
+    Identification persistante : Le système identifie chaque utilisateur par son adresse IP. Même si l'utilisateur rafraîchit la page, son nombre d'essais reste mémorisé.
+
+    Optimisation des ressources : La fonction cleanupExpired est cruciale : elle parcourt la liste des IP stockées pour supprimer celles dont le délai est expiré. Cela évite que l'application ne consomme de la mémoire inutilement sur le long terme.
 ## Conclusion
