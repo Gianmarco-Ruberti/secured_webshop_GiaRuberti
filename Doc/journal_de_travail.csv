@@ -1,0 +1,29 @@
+Date,Nom,Temps,État,Description
+"17/03/2026","refactor(app): refactor project structure and add initial homepage","[?]","[?]","refactor(app): refactor project structure and add initial homepage"
+"17/03/2026","Added minimal DB, routes and scripts to enable the challenges","[?]","[?]","Added minimal DB, routes and scripts to enable the challenges"
+"17/03/2026","refactor(app): add route breach","[?]","[?]","refactor(app): add route breach"
+"17/03/2026","refactor(html): fix text errors","[?]","[?]","refactor(html): fix text errors"
+
+"18/03/2026","Merge pull request #2 from ETML-INF/refactor_app","[?]","[?]","Merge pull request #2 from ETML-INF/refactor_app Refactor app"
+
+"20/03/2026","feat(login) : création du login","[70]","[DONE]","feat(login) : création du login  j'ai chercher des info pour comprendre comment faire le login"
+"20/03/2026","décommenté la nav","[2]","[DONE]","décommenté la nav"
+
+"27/03/2026","feat(gitigore) : mise a jour du gitignore","[6]","[DONE]","feat(gitigore) : mise a jour du gitignore"
+"27/03/2026","feat(suppression) : supp des fichier du gitignore","[8]","[DONE]","feat(suppression) : supp des fichier du gitignore"
+"27/03/2026","feat(package) : mise a jour des package","[4]","[DONE]","feat(package) : mise a jour des package"
+"27/03/2026","feat(controllers) : mise de tout le authcontroller","[24]","[DONE]","feat(controllers) : mise de tout le authcontroller"
+"27/03/2026","feat(middelware) : création du middelware","[16]","[DONE]","feat(middelware) : création du middelware"
+"27/03/2026","feat(views) : création de toute les page","[28]","[DONE]","feat(views) : création de toute les page"
+"27/03/2026","feat(routes) mise du middleware dans les routes","[1]","[DONE]","feat(routes) mise du middleware dans les routes"
+"27/03/2026","feat(utils) : création de util security","[17]","[DONE]","feat(utils) : création de util security"
+"27/03/2026","feat(css) : création des css pour chaque page","[7]","[DONE]","feat(css) : création des css pour chaque page"
+
+"24/04/2026","feat(HTTPs) : mise en mode https","[68]","[DONE]","feat(HTTPs) : mise en mode https avec le certificat ssl"
+"24/04/2026","feat(création du rapport) :","[67]","[DONE]","feat(création du rapport) :  le reste du temps c'est john the ripper"
+
+"01/05/2026","feat(gitignore) : ajout des certificat","[1]","[DONE]","feat(gitignore) : ajout des certificat"
+"01/05/2026","feat(middleware) : ajout d'un rateLimit pour le nombre d'essai de connection","[25]","[DONE]","feat(middleware) : ajout d'un rateLimit pour le nombre d'essai de connection"
+"01/05/2026","feat(routes) : ajout du rateLimit dans la route auth","[5]","[DONE]","feat(routes) : ajout du rateLimit dans la route auth"
+"01/05/2026","feat(rapport) : ajout de 2 chapitre","[34]","[DONE]","feat(rapport) : ajout de 2 chapitre   Vérifier la résistance de vos hash avec l’outil John The Ripper et aux rainbow tables, via un export de la BDD  Limiter le nombre de tentatives de login (exemple : 5 essais par minute par IP) pour contrer le brute-force"
+"01/05/2026","feat(logger) : création de log pour les connection","[60]","[WIP]","feat(logger) : création de log pour les connection"
