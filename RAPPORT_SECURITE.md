@@ -746,7 +746,7 @@ Le module est configuré de manière stricte pour maximiser la sécurité des co
 #### Implémentation technique
 
 Le code repose sur une logique de suivi en mémoire vive via l'objet Map de JavaScript :
-
+```js
     const WINDOW = 15 * 60 * 1000; // 15 minutes
     const ATTEMPTS = 3;
     const ATTEMPTSBYIP = new Map();
@@ -788,10 +788,59 @@ Le code repose sur une logique de suivi en mémoire vive via l'objet Map de Java
         ATTEMPTSBYIP.set(ip, existing);
         next();
     };
-
+```
 #### Analyse du fonctionnement
 
     Identification persistante : Le système identifie chaque utilisateur par son adresse IP. Même si l'utilisateur rafraîchit la page, son nombre d'essais reste mémorisé.
 
     Optimisation des ressources : La fonction cleanupExpired est cruciale : elle parcourt la liste des IP stockées pour supprimer celles dont le délai est expiré. Cela évite que l'application ne consomme de la mémoire inutilement sur le long terme.
+
+### 12. Journalisation sécurisée des événements : logger les connexions, accès refusés et erreurs sans exposer de données sensibles
+
+### Description
+La journalisation (logging) est un pilier de la cybersécurité. Elle permet de surveiller les activités suspectes, de diagnostiquer les erreurs et de garder une trace des accès. Cependant, un log mal conçu peut devenir une vulnérabilité majeure s'il contient des données sensibles comme des secrets ou des identifiants.
+
+### Implémentation technique du Logger (`utils/logger.js`)
+Le système repose sur un module personnalisé qui centralise l'écriture dans un fichier `security.log`. Ce module assure une **hygiène rigoureuse des données** (Data Scrubbing) avant l'écriture sur le disque.
+
+#### Sécurisation des données sensibles
+Avant d'enregistrer les détails d'un événement, le logger effectue un nettoyage systématique pour éviter toute fuite d'information :
+
+```javascript
+function write(level, action, message, details) {
+    // Sécurité : Clonage et suppression des champs sensibles
+    // On s'assure qu'aucun mot de passe (clair ou hashé) ne finit dans les logs
+    const cleanDetails = JSON.parse(JSON.stringify(details));
+    delete cleanDetails.password; 
+    delete cleanDetails.passwordConfirm;
+
+    const entry = `[${new Date().toISOString()}] [${level}] [${action}] ${message} | Details: ${JSON.stringify(cleanDetails)}\n`;
+    fs.appendFileSync(logFile, entry);
+}
+```
+### Typologie des événements surveillés
+
+Le système de journalisation est configuré pour intercepter et catégoriser quatre types d'événements critiques, permettant un suivi granulaire de la sécurité de l'application :
+
+* **Connexions réussies (`INFO`)** : Audit des sessions actives. On enregistre l'ID de l'utilisateur et son rôle pour assurer la traçabilité des accès légitimes.
+* **Échecs d'authentification (`WARN`)** : Capture systématique de l'adresse IP et de l'email utilisé. Ces données sont cruciales pour l'analyse post-incident et la détection de tentatives d'attaques par force brute (brute-force).
+* **Accès refusés (`WARN` / `ERROR`)** : Journalisation des tentatives de franchissement de privilèges. Par exemple, lorsqu'un utilisateur avec le rôle `user` tente d'accéder aux points de terminaison réservés à l'administration (`/api/admin`).
+* **Erreurs critiques (`ERROR`)** : Traces techniques liées aux défaillances de la base de données ou aux plantages (crashs) impromptus du serveur, facilitant la maintenance corrective.
+
+### Analyse de l'implémentation et retour d'expérience
+
+La mise en place opérationnelle de ce système de log a nécessité environ **une heure de travail**. 
+
+Une part significative de ce temps a été investie dans la résolution d'un problème persistant au sein du middleware d'authentification. Après une phase d'investigation minutieuse sur le flux de données, il s'est avéré que le dysfonctionnement n'existait pas réellement. Cette situation résultait probablement d'une confusion lors du cycle de tests ou d'une mauvaise lecture des en-têtes (headers) dans la console de développement.
 ## Conclusion
+
+La sécurisation de ce WebShop a permis de transformer une application vulnérable en une plateforme robuste, alignée sur les standards de sécurité actuels. À travers ce projet, j'ai mis en œuvre une stratégie de défense en profondeur, agissant sur plusieurs couches critiques :
+
+1.  **Protection des données** : Par l'utilisation de hachage complexe (Bcrypt), l'ajout de "sel" et de "poivre", garantissant l'intégrité des secrets utilisateurs.
+2.  **Sécurisation des échanges** : L'implémentation du protocole HTTPS et l'utilisation de jetons JWT assurent la confidentialité et l'authenticité des communications.
+3.  **Contrôle d'accès et intégrité** : Le passage aux requêtes paramétrées a neutralisé les risques d'injection SQL, tandis que les middlewares de rôles ont permis de cloisonner strictement les fonctionnalités d'administration.
+4.  **Résilience et surveillance** : La mise en place d'un Rate Limiter contre le brute-force et d'un système de journalisation (logging) anonymisé offre une visibilité indispensable sur la santé sécuritaire de l'application.
+
+Sur un plan personnel, ce travail a été particulièrement formateur. Au-delà des défis techniques, il m'a appris l'importance de la rigueur lors des phases de test et de débogage. L'épisode du "faux problème" rencontré dans le middleware d'authentification illustre parfaitement la réalité du métier de développeur : la sécurité ne repose pas seulement sur le code, mais aussi sur une compréhension fine et lucide du flux de données.
+
+En conclusion, ce projet démontre que la sécurité n'est pas une option ajoutée a posteriori, mais un processus continu qui nécessite une vigilance constante et une méthodologie structurée.
