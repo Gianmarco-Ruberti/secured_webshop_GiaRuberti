@@ -1,6 +1,10 @@
 # Rapport d'Implémentation - Sécurité du WebShop
 ---
 
+|Nom|Prénom|Classe|Année|
+|---|---|---|---|
+|Ruberti|Gianmarco|CID2B|2026|
+
 ## Table des matières
 
 1. [Page de Login en Frontend](#1-page-de-login-en-frontend)
