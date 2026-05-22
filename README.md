@@ -1,5 +1,9 @@
 # Secured Webshop
 
+|Nom|Prénom|Classe|Année|
+|---|---|---|---|
+|Ruberti|Gianmarco|CID2B|2026|
+
 Projet pédagogique utilisé dans le cadre du cours **183 - Sécurité des applications** (ETML).
 
 Cette application est un serveur web Node.js qui regroupe deux parties : un **backend** (API REST en Express qui communique avec la base de données MySQL) et un **frontend** (pages HTML servies directement par le même serveur). Les pages web appellent l'API via `fetch()` pour afficher et modifier les données.
